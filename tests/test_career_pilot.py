@@ -129,5 +129,26 @@ class TestCareerPilot(unittest.TestCase):
         self.assertIn("document_id", save_res)
 
 
+    def test_fetch_tech_career_resources(self):
+        """Verify public API tech resource lookup."""
+        from career_pilot.tools import fetch_tech_career_resources
+        res = fetch_tech_career_resources("python")
+        self.assertEqual(res["status"], "success")
+        self.assertGreater(len(res["top_resources"]), 0)
+
+
+    def test_maps_tools_graceful_missing_key(self):
+        """Verify Maps tools gracefully inform user if GOOGLE_MAPS_API_KEY is not set."""
+        from career_pilot.tools import geocode_location, search_nearby_career_places
+        
+        geo_res = geocode_location("New York")
+        self.assertEqual(geo_res["status"], "error")
+        self.assertIn("GOOGLE_MAPS_API_KEY", geo_res["message"])
+
+        places_res = search_nearby_career_places(40.7128, -74.0060, "library")
+        self.assertEqual(places_res["status"], "error")
+        self.assertIn("GOOGLE_MAPS_API_KEY", places_res["message"])
+
+
 if __name__ == "__main__":
     unittest.main()

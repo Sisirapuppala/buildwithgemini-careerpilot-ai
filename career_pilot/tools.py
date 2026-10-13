@@ -344,3 +344,156 @@ def save_candidate_milestone_to_firestore(user_id: str, milestone_title: str, ta
             "status": "error",
             "message": f"Failed to record milestone to Firestore: {str(e)}"
         }
+
+# Public API & Google Maps Integration
+
+def fetch_tech_career_resources(tag: str = "python") -> dict[str, Any]:
+    """Queries a free public tech documentation & dev resource API (DevDocs / GitHub topics)
+    to fetch real live learning references and community guides for filling skill gaps.
+    
+    Args:
+        tag: Technology or skill to lookup (e.g. 'python', 'docker', 'react', 'git').
+    """
+    import urllib.request
+    import json
+    
+    clean_tag = tag.lower().strip().replace(" ", "-")
+    url = f"https://api.github.com/search/repositories?q=topic:{clean_tag}+stars:>1000&sort=stars&order=desc&per_page=5"
+    
+    headers = {
+        "User-Agent": "CareerPilot-AI-Agent",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=10) as response:
+            data = json.loads(response.read().decode())
+            items = []
+            for repo in data.get("items", []):
+                items.append({
+                    "name": repo.get("name"),
+                    "full_name": repo.get("full_name"),
+                    "description": repo.get("description"),
+                    "stars": repo.get("stargazers_count"),
+                    "url": repo.get("html_url")
+                })
+            return {
+                "status": "success",
+                "tag": clean_tag,
+                "total_count": data.get("total_count", 0),
+                "top_resources": items
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to fetch public resources: {str(e)}"
+        }
+
+
+def geocode_location(address: str) -> dict[str, Any]:
+    """Uses Google Geocoding API to convert an address or city into geographic coordinates (latitude & longitude).
+    
+    Reads GOOGLE_MAPS_API_KEY from the environment.
+    """
+    import urllib.request
+    import urllib.parse
+    import json
+    import os
+    
+    api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
+    if not api_key:
+        return {
+            "status": "error",
+            "message": "GOOGLE_MAPS_API_KEY is not set in environment or local .env"
+        }
+        
+    encoded_addr = urllib.parse.quote(address)
+    url = f"https://maps.googleapis.com/maps/api/geocode/json?address={encoded_addr}&key={api_key}"
+    
+    try:
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=10) as response:
+            data = json.loads(response.read().decode())
+            if data.get("status") == "OK" and data.get("results"):
+                res = data["results"][0]
+                return {
+                    "status": "success",
+                    "formatted_address": res.get("formatted_address"),
+                    "location": res.get("geometry", {}).get("location"),
+                    "place_id": res.get("place_id")
+                }
+            return {
+                "status": "error",
+                "api_status": data.get("status"),
+                "message": data.get("error_message", "No results found for given address")
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Geocoding request failed: {str(e)}"
+        }
+
+
+def search_nearby_career_places(latitude: float, longitude: float, place_type: str = "library", radius_meters: float = 2000.0) -> dict[str, Any]:
+    """Uses Google Places API (New) searchNearby endpoint to find nearby study hubs, libraries, co-working spaces, or universities.
+    
+    Args:
+        latitude: Center point latitude.
+        longitude: Center point longitude.
+        place_type: Type of place to find (e.g. 'library', 'university', 'cafe', 'book_store').
+        radius_meters: Search radius in meters (default 2000m).
+    """
+    import urllib.request
+    import json
+    import os
+    
+    api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
+    if not api_key:
+        return {
+            "status": "error",
+            "message": "GOOGLE_MAPS_API_KEY is not set in environment or local .env"
+        }
+        
+    url = "https://places.googleapis.com/v1/places:searchNearby"
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": api_key,
+        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.location,places.types"
+    }
+    
+    payload = {
+        "includedTypes": [place_type],
+        "maxResultCount": 5,
+        "locationRestriction": {
+            "circle": {
+                "center": {
+                    "latitude": latitude,
+                    "longitude": longitude
+                },
+                "radius": float(radius_meters)
+            }
+        }
+    }
+    
+    try:
+        req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=10) as response:
+            data = json.loads(response.read().decode())
+            results = []
+            for p in data.get("places", []):
+                results.append({
+                    "name": p.get("displayName", {}).get("text"),
+                    "address": p.get("formattedAddress"),
+                    "location": p.get("location"),
+                    "types": p.get("types", [])
+                })
+            return {
+                "status": "success",
+                "places": results
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Places search failed: {str(e)}"
+        }
