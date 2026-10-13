@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareerPilot AI — Your Intelligent Career Copilot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(22, 28, 45, 0.75);
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #4f46e5;
+      --accent-gradient: linear-gradient(135deg, #6366f1, #a855f7);
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --user-bubble: #312e81;
+      --agent-bubble: #1e293b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      background-image: radial-gradient(circle at 20% 15%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 85%, rgba(168, 85, 247, 0.12) 0%, transparent 50%);
+    }
+
+    /* Header */
+    header {
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(11, 15, 25, 0.8);
+      backdrop-filter: blur(12px);
+    }
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      background: var(--accent-gradient);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+    .tagline {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* Main Container */
+    .container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar Controls */
+    aside {
+      width: 300px;
+      border-right: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.5);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+    .panel-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .quick-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: left;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .quick-btn:hover {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: #6366f1;
+      transform: translateY(-1px);
+    }
+    .quick-btn strong {
+      color: #818cf8;
+    }
+
+    /* Chat Area */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: transparent;
+      overflow: hidden;
+    }
+    .messages-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .message {
+      max-width: 80%;
+      padding: 16px 20px;
+      border-radius: 14px;
+      line-height: 1.6;
+      font-size: 0.95rem;
+      word-wrap: break-word;
+      animation: fadeIn 0.25s ease forwards;
+    }
+    .message.user {
+      align-self: flex-end;
+      background: var(--user-bubble);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .message.agent {
+      align-self: flex-start;
+      background: var(--agent-bubble);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+    .message pre {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 12px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 10px 0;
+    }
+    .message table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 0.85rem;
+    }
+    .message th, .message td {
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      text-align: left;
+    }
+    .message th {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Input Bar */
+    .input-bar {
+      padding: 18px 24px;
+      background: rgba(11, 15, 25, 0.9);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .input-bar input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      padding: 14px 18px;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-bar input:focus {
+      border-color: #818cf8;
+    }
+    .input-bar button {
+      background: var(--accent-gradient);
+      color: #fff;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .input-bar button:hover {
+      opacity: 0.9;
+    }
+    .input-bar button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo-container">
+      <div class="badge">CareerPilot AI</div>
+      <div class="tagline">Intelligent Career Copilot • Powered by Gemini 3.8 Flash & Google ADK</div>
+    </div>
+    <div style="font-size: 0.85rem; color: #10b981;">● Online</div>
+  </header>
+
+  <div class="container">
+    <aside>
+      <div class="panel-title">Quick Actions</div>
+      <button class="quick-btn" onclick="sendPrompt('What do you remember about my career profile and target role?')">
+        <strong>🧠 Candidate Memory</strong>
+        <span>Recall saved profile, target role & past mock interview scores</span>
+      </button>
+
+      <button class="quick-btn" onclick="sendPrompt('List available test profiles.')">
+        <strong>📋 Discover Profiles</strong>
+        <span>Show pre-loaded resumes and target job profiles</span>
+      </button>
+
+      <button class="quick-btn" onclick="sendPrompt('Compare junior_software_engineer against ai_ml_engineer, show matched/missing skills, and generate a learning roadmap.')">
+        <strong>🎯 Gap & Roadmap</strong>
+        <span>Analyze skill gaps and build a 6-week learning plan</span>
+      </button>
+
+      <button class="quick-btn" onclick="sendPrompt('Ask me an interview question for an AI/ML Engineer role and evaluate my answer: In my past project I built a RAG pipeline with text-embedding-004 and vector search.')">
+        <strong>🎤 Mock Interview</strong>
+        <span>Test STAR method rubric evaluation on candidate answers</span>
+      </button>
+    </aside>
+
+    <main>
+      <div class="messages-container" id="chat">
+        <div class="message agent">
+          <strong>CareerPilot AI:</strong> Hello! I am your AI career copilot powered by Gemini 3.8 Flash. I can help you parse resumes, compare your profile against target jobs, discover skill gaps, create personalized learning roadmaps, and practice role-specific technical interviews. How can I help you today?
+        </div>
+      </div>
+
+      <div class="input-bar">
+        <input type="text" id="userInput" placeholder="Ask CareerPilot anything (e.g. 'Compare my resume against AI engineer', 'Mock interview me')..." onkeydown="if(event.key === 'Enter') handleSend()">
+        <button id="sendBtn" onclick="handleSend()">Send</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function formatText(text) {
+      return text
+        .replace(/\n\n/g, '<br><br>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
+    }
+
+    function appendMessage(role, text) {
+      const msg = document.createElement('div');
+      msg.className = `message ${role}`;
+      msg.innerHTML = role === 'user' ? `<strong>You:</strong> ${formatText(text)}` : `<strong>CareerPilot AI:</strong><br>${formatText(text)}`;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    async function handleSend() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage('user', text);
+      input.value = '';
+      sendBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+        const data = await res.json();
+        appendMessage('agent', data.reply);
+      } catch (err) {
+        appendMessage('agent', 'Error connecting to CareerPilot backend: ' + err.message);
+      } finally {
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    }
+
+    function sendPrompt(promptText) {
+      input.value = promptText;
+      handleSend();
+    }
+  </script>
+</body>
+</html>
