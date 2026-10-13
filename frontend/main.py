@@ -90,10 +90,9 @@ async def chat_endpoint(req: ChatRequest):
             full_reply = "CareerPilot analyzed your request."
 
         return ChatResponse(reply=full_reply, status="success")
-
     except Exception as e:
         return ChatResponse(reply=f"Error executing request: {str(e)}", status="error")
 
-
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=False)
+    port = int(os.environ.get("PORT", "8081"))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
