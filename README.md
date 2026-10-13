@@ -130,12 +130,23 @@ adk run career_pilot "Compare the junior_software_engineer resume with the ai_ml
 adk run career_pilot "Ask me a technical interview question for an AI/ML Engineer role, and evaluate my answer: 'When building a RAG application, I chunk documents with overlap, generate embeddings using text-embedding-004, and evaluate retrieval precision.'"
 ```
 
-### 4. Interactive Web Playground
+### 4. Interactive Web Playground (ADK Dev UI)
 Launch the ADK web interface:
 ```bash
-adk web --host 0.0.0.0 --port 8000 .
+uv run adk web . --port 8080 --reload_agents --memory_service_uri=agentengine://615805951269666816
 ```
-Navigate to `http://localhost:8000` in your browser and select `career_pilot`.
+Navigate to `http://localhost:8080` in your browser and select `career_pilot`.
+
+### 5. Production Glassmorphic Chat Web App (Port 8081)
+Launch the standalone FastAPI web application featuring A2UI rendering, client session isolation, and Vertex AI Memory Bank:
+```bash
+export GOOGLE_GENAI_USE_VERTEXAI="true"
+export GOOGLE_CLOUD_PROJECT="qwiklabs-gcp-04-6300f100430f"
+export GOOGLE_CLOUD_LOCATION="global"
+export PORT=8081
+python3 frontend/main.py
+```
+Open your browser at `http://localhost:8081`. Every tab receives an isolated session, and cross-session durable memories are synced with Vertex AI Memory Bank (`615805951269666816`).
 
 ---
 
