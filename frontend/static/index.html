@@ -270,19 +270,52 @@
     const sendBtn = document.getElementById('sendBtn');
 
     function formatText(text) {
-      return text
-        .replace(/\n\n/g, '<br><br>')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/`([^`]+)`/g, '<code>$1</code>');
+      if (!text) return '';
+      // Escape basic html
+      let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      // Code blocks
+      html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+      // Inline code
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      // Bold
+      html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      // Italic
+      html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      // Bullet points
+      html = html.replace(/^[•*-]\s+(.+)$/gm, '<li>$1</li>');
+      html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+      // Newlines
+      html = html.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+      return html;
     }
 
     function appendMessage(role, text) {
       const msg = document.createElement('div');
       msg.className = `message ${role}`;
-      msg.innerHTML = role === 'user' ? `<strong>You:</strong> ${formatText(text)}` : `<strong>CareerPilot AI:</strong><br>${formatText(text)}`;
+      msg.innerHTML = role === 'user' ? `<strong>You:</strong><br>${formatText(text)}` : `<strong>CareerPilot AI:</strong><br>${formatText(text)}`;
       chat.appendChild(msg);
       chat.scrollTop = chat.scrollHeight;
+      return msg;
+    }
+
+    function showTypingIndicator() {
+      const typing = document.createElement('div');
+      typing.id = 'typingIndicator';
+      typing.className = 'message agent';
+      typing.style.opacity = '0.85';
+      typing.style.fontStyle = 'italic';
+      typing.innerHTML = '<strong>CareerPilot AI:</strong><br><span style="display:inline-flex; align-items:center; gap:4px;">Thinking & analyzing with Gemini... <span style="animation: pulse 1s infinite;">⏳</span></span>';
+      chat.appendChild(typing);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+      const typing = document.getElementById('typingIndicator');
+      if (typing) typing.remove();
     }
 
     async function handleSend() {
@@ -292,19 +325,37 @@
       appendMessage('user', text);
       input.value = '';
       sendBtn.disabled = true;
+      input.disabled = true;
+      showTypingIndicator();
 
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 90000);
+
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text })
+          body: JSON.stringify({ message: text }),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
+
+        removeTypingIndicator();
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || `Server responded with status ${res.status}`);
+        }
         const data = await res.json();
         appendMessage('agent', data.reply);
       } catch (err) {
-        appendMessage('agent', 'Error connecting to CareerPilot backend: ' + err.message);
+        removeTypingIndicator();
+        const errNotice = err.name === 'AbortError' 
+          ? 'Request timed out after 90 seconds. Please try asking a more specific question or try again.'
+          : 'Notice: ' + err.message;
+        appendMessage('agent', errNotice);
       } finally {
         sendBtn.disabled = false;
+        input.disabled = false;
         input.focus();
       }
     }

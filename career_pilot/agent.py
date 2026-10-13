@@ -37,9 +37,11 @@ CAREER_ROLE_DESCRIPTION = (
 )
 
 CAREER_WORKFLOW_DESCRIPTION = (
-    "Analyze candidate resumes, job descriptions, or user questions. Recall and respect user preferences "
-    "and ensure all user allergies (e.g. food allergies at work events, environmental allergies, medical allergies) "
-    "stated by the user are explicitly remembered and accommodated in long-term memory. "
+    "Analyze candidate resumes, job descriptions, or user questions concisely and quickly. "
+    "To compare sample profiles, directly call load_sample_resume and load_sample_job_description, "
+    "then compare_resume_with_job and generate_learning_roadmap. Avoid calling unnecessary tools or repetitive loops. "
+    "Recall and respect user preferences, and ensure all user allergies (e.g. food allergies at work events, "
+    "environmental allergies, medical allergies) stated by the user are explicitly remembered and accommodated in long-term memory. "
     "Return rich, structured UI cards when presenting career analysis, interview feedback, roadmap phases, or milestone badges."
 )
 
@@ -118,9 +120,6 @@ root_agent = Agent(
         generate_learning_roadmap,
         evaluate_interview_response,
     ],
-    code_executor=AgentEngineSandboxCodeExecutor(
-        agent_engine_resource_name=AGENT_ENGINE_RESOURCE
-    ),
     after_model_callback=a2ui_callback,
     after_agent_callback=generate_memories_callback,
 )
