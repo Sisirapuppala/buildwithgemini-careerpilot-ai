@@ -27,17 +27,7 @@ import os
 import sys
 
 packages_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "packages"))
-if packages_dir not in sys.path:
-    sys.path.insert(0, packages_dir)
-
-from a2ui.schema.manager import A2uiSchemaManager
-from a2ui.basic_catalog.provider import BasicCatalog
 from .a2ui_utils import a2ui_callback
-
-schema_manager = A2uiSchemaManager(
-    version="0.8",
-    catalogs=[BasicCatalog.get_config("0.8")],
-)
 
 CAREER_ROLE_DESCRIPTION = (
     "CareerPilot AI, an expert agentic Career Assistant powered by Gemini. "
@@ -68,13 +58,30 @@ CAREER_UI_DESCRIPTION = (
     "<a2a_datapart_json> tags or 'kind'/'data'/'metadata' objects."
 )
 
-A2UI_INSTRUCTION = schema_manager.generate_system_prompt(
-    role_description=CAREER_ROLE_DESCRIPTION,
-    workflow_description=CAREER_WORKFLOW_DESCRIPTION,
-    ui_description=CAREER_UI_DESCRIPTION,
-    include_schema=True,
-    include_examples=True,
-)
+try:
+    from a2ui.schema.manager import A2uiSchemaManager
+    from a2ui.basic_catalog.provider import BasicCatalog
+    schema_manager = A2uiSchemaManager(
+        version="0.8",
+        catalogs=[BasicCatalog.get_config("0.8")],
+    )
+    A2UI_INSTRUCTION = schema_manager.generate_system_prompt(
+        role_description=CAREER_ROLE_DESCRIPTION,
+        workflow_description=CAREER_WORKFLOW_DESCRIPTION,
+        ui_description=CAREER_UI_DESCRIPTION,
+        include_schema=True,
+        include_examples=True,
+    )
+except Exception:
+    import json
+    prompt_file = os.path.join(os.path.dirname(__file__), "a2ui_prompt.json")
+    if os.path.exists(prompt_file):
+        with open(prompt_file) as f:
+            A2UI_INSTRUCTION = json.load(f)
+    else:
+        A2UI_INSTRUCTION = (
+            f"{CAREER_ROLE_DESCRIPTION}\n\n{CAREER_WORKFLOW_DESCRIPTION}\n\n{CAREER_UI_DESCRIPTION}"
+        )
 
 # WRITE: after each turn, send the session to Memory Bank for durable fact extraction
 async def generate_memories_callback(callback_context: CallbackContext):
