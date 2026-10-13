@@ -67,13 +67,76 @@ async def serve_index():
     return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 
 
+
+def _convert_a2ui_to_markdown(data: dict) -> str:
+    """Convert an A2UI surfaceUpdate dictionary to clean, readable Markdown text."""
+    su = data.get("surfaceUpdate") or data
+    components = su.get("components", [])
+    lines = []
+    for comp in components:
+        c = comp.get("component", {})
+        txt = c.get("Text")
+        if txt:
+            val = txt.get("text", {})
+            text_str = val.get("literalString", "") if isinstance(val, dict) else str(val)
+            hint = txt.get("usageHint", "")
+            if hint == "h1":
+                lines.append(f"# {text_str}")
+            elif hint == "h2":
+                lines.append(f"## {text_str}")
+            elif hint in ("h3", "h4"):
+                lines.append(f"### {text_str}")
+            else:
+                lines.append(text_str)
+        img = c.get("Image")
+        if img:
+            url_spec = img.get("url", {})
+            url = url_spec.get("literalString", "") if isinstance(url_spec, dict) else str(url_spec)
+            if url and url.startswith("http"):
+                lines.append(f"![Career Visualization]({url})")
+    return "\n\n".join([line for line in lines if line.strip()]).strip()
+
+
+def _clean_and_format_part(raw_text: str) -> str:
+    """Detect raw A2UI JSON, JSON arrays, or a2a_datapart envelopes and format cleanly as Markdown."""
+    if not raw_text:
+        return ""
+    raw = raw_text.strip()
+    is_a2ui = (
+        "<a2a_datapart_json>" in raw
+        or "<a2ui-json>" in raw
+        or ("surfaceUpdate" in raw and "components" in raw)
+        or ("surfaceId" in raw and "components" in raw)
+        or (raw.startswith("[") and "components" in raw)
+    )
+    if is_a2ui:
+        import re, json
+        # Extract payload inside wrapper tags if present
+        m = re.search(r"<(?:a2a_datapart_json|a2ui-json)>(.*?)(?:</(?:a2a_datapart_json|a2ui-json)>|$)", raw, re.DOTALL)
+        candidate = m.group(1).strip() if m else raw
+        try:
+            payload = json.loads(candidate)
+            data = payload.get("data", payload) if isinstance(payload, dict) else payload
+            if isinstance(data, list):
+                res = [_convert_a2ui_to_markdown(item) for item in data if isinstance(item, dict)]
+                formatted = "\n\n".join([r for r in res if r])
+                if formatted:
+                    return formatted
+            elif isinstance(data, dict):
+                formatted = _convert_a2ui_to_markdown(data)
+                if formatted:
+                    return formatted
+        except Exception:
+            # If partial/malformed JSON, strip any envelope tags
+            cleaned = re.sub(r"</?(?:a2a_datapart_json|a2ui-json)>", "", raw).strip()
+            return cleaned
+    return raw
+
+
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(req: ChatRequest):
-    if not req.message or not req.message.strip():
-        raise HTTPException(status_code=400, detail="Empty message")
-
+    """Chat with the CareerPilot AI ADK Agent."""
     try:
-        # Wrap message inside Content
         user_msg = types.Content(
             role="user",
             parts=[types.Part.from_text(text=req.message)]
@@ -99,30 +162,26 @@ async def chat_endpoint(req: ChatRequest):
             if hasattr(event, "content") and event.content:
                 for part in event.content.parts:
                     if hasattr(part, "text") and part.text:
-                        reply_chunks.append(part.text)
+                        cleaned = _clean_and_format_part(part.text)
+                        if cleaned:
+                            reply_chunks.append(cleaned)
                     elif hasattr(part, "inline_data") and part.inline_data:
                         try:
                             raw = part.inline_data.data.decode("utf-8")
-                            import re, json
-                            m = re.search(r'<a2a_datapart_json>(.*?)(?:</a2a_datapart_json>|$)', raw)
-                            if m:
-                                payload = json.loads(m.group(1))
-                                # Extract readable text from surfaceUpdate components
-                                a2ui_data = payload.get("data", {})
-                                su = a2ui_data.get("surfaceUpdate", {})
-                                for comp in su.get("components", []):
-                                    c_spec = comp.get("component", {})
-                                    txt_comp = c_spec.get("Text", {})
-                                    if txt_comp:
-                                        t_val = txt_comp.get("text", {})
-                                        if isinstance(t_val, dict):
-                                            reply_chunks.append(t_val.get("literalString", ""))
-                                        elif isinstance(t_val, str):
-                                            reply_chunks.append(t_val)
+                            cleaned = _clean_and_format_part(raw)
+                            if cleaned:
+                                reply_chunks.append(cleaned)
                         except Exception:
                             pass
 
-        full_reply = "\n\n".join([c.strip() for c in reply_chunks if c.strip()]).strip()
+        # Deduplicate consecutive identical chunks if any
+        deduped = []
+        for chunk in reply_chunks:
+            chunk_str = chunk.strip()
+            if chunk_str and (not deduped or deduped[-1] != chunk_str):
+                deduped.append(chunk_str)
+
+        full_reply = "\n\n".join(deduped).strip()
         if not full_reply:
             full_reply = "CareerPilot successfully executed your request."
 
