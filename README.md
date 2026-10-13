@@ -11,7 +11,21 @@ In today's fast-evolving technology landscape, job seekers and career pivoters f
 - Translating missing skills into concrete, actionable study plans.
 - Receiving objective, rubric-driven feedback on practice interview questions.
 
-**CareerPilot AI** is an intelligent, agent-first copilot that bridges these gaps. It provides deterministic resume parsing, automated job-fit gap analysis, structured learning roadmaps with capstone project recommendations, role-specific interview coaching using the STAR framework, and cross-turn candidate preference memory.
+**CareerPilot AI** is an intelligent, agent-first copilot that bridges these gaps. It provides deterministic resume parsing, automated job-fit gap analysis, structured learning roadmaps with capstone project recommendations, role-specific interview coaching using the STAR framework, cross-turn candidate preference memory, A2UI visual cards, and Firestore cloud persistence.
+
+---
+
+## 📸 Website & Application Previews
+
+### 1. Modern Glassmorphic Web Application (`http://localhost:8081`)
+Features one-click quick actions for candidate memory, resume gap analytics, customized roadmaps, and STAR interview evaluations.
+
+![CareerPilot AI Dashboard](docs/images/careerpilot_dashboard.png)
+
+### 2. Google ADK Developer Playground (`http://localhost:8080`)
+Interactive developer environment rendering agent reasoning, A2UI card layouts, tool calls, and Vertex AI Memory Bank durable fact extraction.
+
+![Google ADK Developer Playground](docs/images/adk_playground.png)
 
 ---
 
