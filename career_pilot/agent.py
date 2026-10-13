@@ -85,14 +85,18 @@ except Exception:
 
 # WRITE: after each turn, send the session to Memory Bank for durable fact extraction
 async def generate_memories_callback(callback_context: CallbackContext):
-    await callback_context.add_session_to_memory()
+    try:
+        await callback_context.add_session_to_memory()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning("Memory service not available or failed: %s", e)
     return None
 
 # Agent Engine instance from deployment_metadata.json
 AGENT_ENGINE_RESOURCE = "projects/580283762535/locations/us-central1/reasoningEngines/615805951269666816"
 
 root_agent = Agent(
-    model='gemini-3.8-flash',
+    model='gemini-2.5-flash',
     name='career_pilot_agent',
     description='CareerPilot AI: Intelligent resume parser, job fit analyzer, roadmap builder, and interview coach with A2UI, Memory Bank, Sandbox, Firestore, and Maps.',
     instruction=A2UI_INSTRUCTION,
