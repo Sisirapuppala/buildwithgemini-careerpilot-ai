@@ -1,4 +1,10 @@
-"""CareerPilot AI - Root Agent Configuration."""
+import os
+import sys
+
+# Ensure global location is used for gemini-3.8-flash on Vertex AI
+if not os.environ.get("GOOGLE_CLOUD_LOCATION"):
+    os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
+os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "true"
 
 from google.adk.agents.llm_agent import Agent
 from google.adk.agents.callback_context import CallbackContext
@@ -22,10 +28,6 @@ from career_pilot.tools import (
     search_nearby_career_places,
     generate_career_milestone_image,
 )
-
-import os
-import sys
-
 packages_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "packages"))
 from .a2ui_utils import a2ui_callback
 
@@ -98,7 +100,7 @@ async def generate_memories_callback(callback_context: CallbackContext):
 AGENT_ENGINE_RESOURCE = "projects/580283762535/locations/us-central1/reasoningEngines/615805951269666816"
 
 root_agent = Agent(
-    model='gemini-2.5-flash',
+    model='gemini-3.8-flash',
     name='career_pilot_agent',
     description='CareerPilot AI: Intelligent resume parser, job fit analyzer, roadmap builder, and interview coach with A2UI, Memory Bank, Sandbox, Firestore, and Maps.',
     instruction=A2UI_INSTRUCTION,

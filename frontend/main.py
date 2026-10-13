@@ -122,10 +122,15 @@ def _clean_and_format_part(raw_text: str) -> str:
                 formatted = "\n\n".join([r for r in res if r])
                 if formatted:
                     return formatted
+                return ""
             elif isinstance(data, dict):
+                # If beginRendering with no components, swallow it so raw envelope is not output
+                if "beginRendering" in data and "surfaceUpdate" not in data and "components" not in data:
+                    return ""
                 formatted = _convert_a2ui_to_markdown(data)
                 if formatted:
                     return formatted
+                return ""
         except Exception:
             # If partial/malformed JSON, strip any envelope tags
             cleaned = re.sub(r"</?(?:a2a_datapart_json|a2ui-json)>", "", raw).strip()
