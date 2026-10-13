@@ -111,5 +111,23 @@ class TestCareerPilot(unittest.TestCase):
         self.assertIn("Kubernetes", upd["updated_profile"]["saved_skills"])
 
 
+    def test_firestore_tools(self):
+        """Verify Firestore read and write tools."""
+        from career_pilot.tools import list_firestore_career_roles, save_candidate_milestone_to_firestore
+
+        roles_res = list_firestore_career_roles()
+        self.assertEqual(roles_res["status"], "success")
+        self.assertGreater(len(roles_res["roles"]), 0)
+
+        save_res = save_candidate_milestone_to_firestore(
+            user_id="test_candidate_unit",
+            milestone_title="Mastered Vector Indexing",
+            target_role="AI/ML Solutions Engineer",
+            details="Scored 9/10 in mock test."
+        )
+        self.assertEqual(save_res["status"], "success")
+        self.assertIn("document_id", save_res)
+
+
 if __name__ == "__main__":
     unittest.main()

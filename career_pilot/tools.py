@@ -276,3 +276,71 @@ def update_candidate_profile(target_role: str = None, target_seniority: str = No
         "message": "Candidate career profile successfully updated.",
         "updated_profile": _ACTIVE_USER_PROFILE
     }
+
+# Firestore Integration for Persistent Career Roles and User Journey
+FIRESTORE_PROJECT_ID = "qwiklabs-gcp-04-6300f100430f"
+
+def get_firestore_client():
+    import os
+    import sys
+    packages_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "packages"))
+    if packages_dir not in sys.path:
+        sys.path.insert(0, packages_dir)
+    from google.cloud import firestore
+    return firestore.Client(project=FIRESTORE_PROJECT_ID)
+
+
+def list_firestore_career_roles() -> dict[str, Any]:
+    """Queries the Firestore 'career_roles' collection to fetch live benchmark role paths and competencies.
+    
+    Use this tool whenever the user wants to see live benchmark career profiles stored in the cloud.
+    """
+    try:
+        db = get_firestore_client()
+        docs = db.collection("career_roles").stream()
+        roles = []
+        for d in docs:
+            roles.append(d.to_dict())
+        return {
+            "status": "success",
+            "source": "Firestore (collection: career_roles)",
+            "roles": roles
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to query Firestore: {str(e)}"
+        }
+
+
+def save_candidate_milestone_to_firestore(user_id: str, milestone_title: str, target_role: str, details: str) -> dict[str, Any]:
+    """Records a candidate's completed learning milestone or mock interview progress into the Firestore 'user_milestones' collection.
+    
+    Args:
+        user_id: Unique candidate ID or username (e.g. 'candidate_123').
+        milestone_title: Title of milestone reached (e.g. 'Completed Vertex AI & RAG Phase').
+        target_role: The role the candidate is pursuing.
+        details: Summary of work done or score achieved.
+    """
+    try:
+        from google.cloud import firestore
+        db = get_firestore_client()
+        doc_ref = db.collection("user_milestones").document()
+        payload = {
+            "user_id": user_id,
+            "milestone_title": milestone_title,
+            "target_role": target_role,
+            "details": details,
+            "timestamp": firestore.SERVER_TIMESTAMP
+        }
+        doc_ref.set(payload)
+        return {
+            "status": "success",
+            "message": f"Milestone '{milestone_title}' successfully saved to Firestore.",
+            "document_id": doc_ref.id
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to record milestone to Firestore: {str(e)}"
+        }

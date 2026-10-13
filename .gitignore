@@ -38,3 +38,4 @@ service-account*.json
 package.json
 assets/
 project_brief.md
+packages/
